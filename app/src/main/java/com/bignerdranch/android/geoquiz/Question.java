@@ -1,4 +1,6 @@
 package com.bignerdranch.android.geoquiz;
+// вспомогательный класс с гетерами и сетерами, через экземляры которого, создаются вопросы в классе
+//активности
 
 public class Question {
     private int mTextResId;
