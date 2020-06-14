@@ -1,5 +1,7 @@
 package com.bignerdranch.android.geoquiz;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -12,17 +14,25 @@ import androidx.appcompat.app.AppCompatActivity;
 
 
 public class MainActivity extends AppCompatActivity {
-    //Задаю ключи для объекта класса бандл.
+    //Задаю ключи для объекта класса бандл.и класса интент
+
     private static final String TAG = "MainActivity";
     private static final String KEY_INDEX = "index";
     private static final String KEY_CORRECT_ANSWERS = "correct";
     private static final String KEY_TOTAL_ANSWERS = "total";
     private static final String KEY_CHECK_ARRAY = "intArray";
-    // Объявляю кнопки тру и фолс.
+    private static final String KEY_ARRAY_OF_CHEAT = "cheatArray";
+    private static final String BOOLEAN_CHEAT = "bcheat";
+
+    private static final int REQUEST_CODE_CHEAT = 0;
+    // Объявляю кнопки тру/фолс и кнопку чит активности.
     Button trueButton;
     Button falseButton;
+    private Button mCheatButton;
     //объявляю массив, заполненный нулями, длинной равной длинне массива с вопросами.
     private int[] checkIndex = {0, 0, 0, 0, 0, 0};
+    //Объявляю индекс вопроса на который подсмотрели ответ
+    private int [] cheatQuestionIndex= {0, 0, 0, 0, 0, 0};
     //Задаю переменную в которую записываю количество верных ответов
     private int correctAnswer = 0;
     //задаю переменную с общим колличеством ответов
@@ -32,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     // Задаю массив с вопросами и верными ответами на них, через создание экземпляров вспомогательного
     //класса
     private Question[] mQuestionBank = new Question[]{
+
             new Question(R.string.question_australia, true),
             new Question(R.string.question_oceans, true),
             new Question(R.string.question_mideast, false),
@@ -41,6 +52,9 @@ public class MainActivity extends AppCompatActivity {
     };
     // Задаю переменную индекса
     private int mCurrentIndex = 0;
+    // Объявляю переменную для записи данных о том, был ли подсмотрен ответ.
+    private boolean mIsCheater;
+
     //переопределяю метод он криейт и добавляю в него тестовые логи.
 
     @Override
@@ -58,6 +72,8 @@ public class MainActivity extends AppCompatActivity {
             correctAnswer = savedInstanceState.getInt(KEY_CORRECT_ANSWERS, 0);
             totalAnswer = savedInstanceState.getInt(KEY_TOTAL_ANSWERS, 0);
             checkIndex = savedInstanceState.getIntArray(KEY_CHECK_ARRAY);
+            cheatQuestionIndex = savedInstanceState.getIntArray(KEY_ARRAY_OF_CHEAT);
+            mIsCheater = savedInstanceState.getBoolean(BOOLEAN_CHEAT,false);
         }
         // ссылаюсь на текстовое поле с вопросом и задаю ему слушателя. При нажатии на поле,
         //увеличиваю индекс вопроса на один и обновляю вопрос. В случае если вопрос последний
@@ -67,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+                mIsCheater = false;
                 updateQuestion();
             }
         });
@@ -111,7 +128,31 @@ public class MainActivity extends AppCompatActivity {
                 updateQuestion();
             }
         });
+//Задаю кнопку чит активности, назначаю ей слушателя и создаю интент.
+        mCheatButton = (Button) findViewById(R.id.cheat_button);
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
+                Intent intent = CheatActivity.newIntent(MainActivity.this, answerIsTrue);
+                startActivityForResult(intent, REQUEST_CODE_CHEAT);
+                cheatQuestionIndex[mCurrentIndex]=1;
+            }
+        });
         updateQuestion();
+    }
+//
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != Activity.RESULT_OK) {
+            return;
+        }
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            if (data == null) {
+                return;
+            }
+            mIsCheater = CheatActivity.wasAnswerShown(data);
+        }
     }
 
     // метод отключает кнопки, если элемент массива с индексом, равным индексу вопроса, равен единице.
@@ -155,6 +196,9 @@ public class MainActivity extends AppCompatActivity {
         savedInstanceState.putInt(KEY_CORRECT_ANSWERS, correctAnswer);
         savedInstanceState.putInt(KEY_TOTAL_ANSWERS, totalAnswer);
         savedInstanceState.putIntArray(KEY_CHECK_ARRAY, checkIndex);
+        savedInstanceState.putIntArray(KEY_ARRAY_OF_CHEAT, cheatQuestionIndex);
+        savedInstanceState.putBoolean(BOOLEAN_CHEAT,mIsCheater);
+
     }
 
     //аналогично*
@@ -195,10 +239,14 @@ public class MainActivity extends AppCompatActivity {
     private void checkAnswer(boolean userPressedTrue) {
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
         int messageResId = 0;
-        if (userPressedTrue == answerIsTrue) {
-            messageResId = R.string.correct_toast;
+        if (mIsCheater&&cheatQuestionIndex[mCurrentIndex]==1) {
+            messageResId = R.string.judgment_toast;
         } else {
-            messageResId = R.string.incorrect_toast;
+            if (userPressedTrue == answerIsTrue) {
+                messageResId = R.string.correct_toast;
+            } else {
+                messageResId = R.string.incorrect_toast;
+            }
         }
 
         checkIndex[mCurrentIndex] = 1;
