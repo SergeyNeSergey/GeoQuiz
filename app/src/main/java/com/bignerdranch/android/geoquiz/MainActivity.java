@@ -25,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String BOOLEAN_CHEAT = "bcheat";
 
     private static final int REQUEST_CODE_CHEAT = 0;
+    // Объявляю вьюшку для вывода количества подсказок
+    private static TextView mCheatAction;
     // Объявляю кнопки тру/фолс и кнопку чит активности.
     Button trueButton;
     Button falseButton;
@@ -32,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     //объявляю массив, заполненный нулями, длинной равной длинне массива с вопросами.
     private int[] checkIndex = {0, 0, 0, 0, 0, 0};
     //Объявляю индекс вопроса на который подсмотрели ответ
-    private int [] cheatQuestionIndex= {0, 0, 0, 0, 0, 0};
+    private int[] cheatQuestionIndex = {0, 0, 0, 0, 0, 0};
     //Задаю переменную в которую записываю количество верных ответов
     private int correctAnswer = 0;
     //задаю переменную с общим колличеством ответов
@@ -57,6 +59,27 @@ public class MainActivity extends AppCompatActivity {
 
     //переопределяю метод он криейт и добавляю в него тестовые логи.
 
+    //Метод считающий количество оставшихся подсказок, ограничиваю количество подсказок тремя.
+    private static void limitToCheatAction(int[] cheatActions) {
+        int threeCheat = 0;
+        for (int i : cheatActions) threeCheat += i;
+        switch (threeCheat) {
+            case 0:
+                mCheatAction.setText("You have " + 3 + " cheat actions");
+                break;
+            case 1:
+                mCheatAction.setText("You have " + 2 + " cheat actions");
+                break;
+            case 2:
+                mCheatAction.setText("You have " + 1 + " cheat actions");
+                break;
+            default:
+                mCheatAction.setText("You have not cheat actions");
+                mCheatAction.setEnabled(false);
+        }
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
             totalAnswer = savedInstanceState.getInt(KEY_TOTAL_ANSWERS, 0);
             checkIndex = savedInstanceState.getIntArray(KEY_CHECK_ARRAY);
             cheatQuestionIndex = savedInstanceState.getIntArray(KEY_ARRAY_OF_CHEAT);
-            mIsCheater = savedInstanceState.getBoolean(BOOLEAN_CHEAT,false);
+            mIsCheater = savedInstanceState.getBoolean(BOOLEAN_CHEAT, false);
         }
         // ссылаюсь на текстовое поле с вопросом и задаю ему слушателя. При нажатии на поле,
         //увеличиваю индекс вопроса на один и обновляю вопрос. В случае если вопрос последний
@@ -88,6 +111,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         mQuestionTextView = findViewById(R.id.question_text_view);
+        mCheatAction = findViewById(R.id.promts);
+        limitToCheatAction(cheatQuestionIndex);
 // ссылаюсь на кнопку тру, назначаю слушателя при нажатии на кнопку вызываю метод проверка вопроса
         trueButton = findViewById(R.id.true_button);
         trueButton.setOnClickListener(new View.OnClickListener() {
@@ -136,12 +161,15 @@ public class MainActivity extends AppCompatActivity {
                 boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
                 Intent intent = CheatActivity.newIntent(MainActivity.this, answerIsTrue);
                 startActivityForResult(intent, REQUEST_CODE_CHEAT);
-                cheatQuestionIndex[mCurrentIndex]=1;
+                cheatQuestionIndex[mCurrentIndex] = 1;
+                limitToCheatAction(cheatQuestionIndex);
             }
         });
         updateQuestion();
     }
-//
+
+    //Проверяю вернувшийся интент из приложения чит активити, Загружаю данные о том, был ли подсмотрен
+    //ответ в переменную типа булин.
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode != Activity.RESULT_OK) {
@@ -197,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
         savedInstanceState.putInt(KEY_TOTAL_ANSWERS, totalAnswer);
         savedInstanceState.putIntArray(KEY_CHECK_ARRAY, checkIndex);
         savedInstanceState.putIntArray(KEY_ARRAY_OF_CHEAT, cheatQuestionIndex);
-        savedInstanceState.putBoolean(BOOLEAN_CHEAT,mIsCheater);
+        savedInstanceState.putBoolean(BOOLEAN_CHEAT, mIsCheater);
 
     }
 
@@ -239,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
     private void checkAnswer(boolean userPressedTrue) {
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
         int messageResId = 0;
-        if (mIsCheater&&cheatQuestionIndex[mCurrentIndex]==1) {
+        if (mIsCheater && cheatQuestionIndex[mCurrentIndex] == 1) {
             messageResId = R.string.judgment_toast;
         } else {
             if (userPressedTrue == answerIsTrue) {
