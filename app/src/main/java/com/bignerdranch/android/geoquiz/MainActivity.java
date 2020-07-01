@@ -14,7 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 
 public class MainActivity extends AppCompatActivity {
-    //Задаю ключи для объекта класса бандл.и класса интент
+    //Задаю ключи для объектов классов Intent и Bundle.
 
     private static final String TAG = "MainActivity";
     private static final String KEY_INDEX = "index";
@@ -25,11 +25,11 @@ public class MainActivity extends AppCompatActivity {
     private static final String BOOLEAN_CHEAT = "bcheat";
 
     private static final int REQUEST_CODE_CHEAT = 0;
-    // Объявляю вьюшку для вывода количества подсказок
+    // Объявляю TextView для вывода количества подсказок
     private static TextView mCheatAction;
-    // Объявляю кнопки тру/фолс и кнопку чит активности.
-    Button trueButton;
-    Button falseButton;
+    // Объявляю кнопки.
+    private Button trueButton;
+    private Button falseButton;
     private Button mCheatButton;
     //объявляю массив, заполненный нулями, длинной равной длинне массива с вопросами.
     private int[] checkIndex = {0, 0, 0, 0, 0, 0};
@@ -39,10 +39,9 @@ public class MainActivity extends AppCompatActivity {
     private int correctAnswer = 0;
     //задаю переменную с общим колличеством ответов
     private int totalAnswer = 0;
-    // объявляю вьюшку для вывода текста вопроса.
+    // объявляю TextView для вывода текста вопроса.
     private TextView mQuestionTextView;
-    // Задаю массив с вопросами и верными ответами на них, через создание экземпляров вспомогательного
-    //класса
+    // Задаю массив с вопросами и верными ответами на них, через создание экземпляров класса Question
     private Question[] mQuestionBank = new Question[]{
 
             new Question(R.string.question_australia, true),
@@ -57,38 +56,15 @@ public class MainActivity extends AppCompatActivity {
     // Объявляю переменную для записи данных о том, был ли подсмотрен ответ.
     private boolean mIsCheater;
 
-    //переопределяю метод он криейт и добавляю в него тестовые логи.
-
-    //Метод считающий количество оставшихся подсказок, ограничиваю количество подсказок тремя.
-    private static void limitToCheatAction(int[] cheatActions) {
-        int threeCheat = 0;
-        for (int i : cheatActions) threeCheat += i;
-        switch (threeCheat) {
-            case 0:
-                mCheatAction.setText("You have " + 3 + " cheat actions");
-                break;
-            case 1:
-                mCheatAction.setText("You have " + 2 + " cheat actions");
-                break;
-            case 2:
-                mCheatAction.setText("You have " + 1 + " cheat actions");
-                break;
-            default:
-                mCheatAction.setText("You have not cheat actions");
-                mCheatAction.setEnabled(false);
-        }
-
-    }
-
+    //переопределяю метод onCreate и добавляю в него тестовые логи.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate(Bundle) called ");
 
-
-//ссылаюсь на макет.
+        //ссылаюсь на макет.
         setContentView(R.layout.activity_main);
-        // если объект класса бандл не нулевой(то есть приложение уже было запущенно), то заполняю
+        // если объект класса Bundle не нулевой(то есть приложение уже было запущенно), то заполняю
         //переменные класса сохраненными значениями
         if (savedInstanceState != null) {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
@@ -113,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         mQuestionTextView = findViewById(R.id.question_text_view);
         mCheatAction = findViewById(R.id.promts);
         limitToCheatAction(cheatQuestionIndex);
-// ссылаюсь на кнопку тру, назначаю слушателя при нажатии на кнопку вызываю метод проверка вопроса
+// ссылаюсь на кнопку true_button, назначаю слушателя при нажатии на кнопку вызываю метод проверка вопроса
         trueButton = findViewById(R.id.true_button);
         trueButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -122,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-// аналогично для кнопки фолс
+// ссылаюсь на кнопку false_button, назначаю слушателя при нажатии на кнопку вызываю метод проверка вопроса
         falseButton = findViewById(R.id.false_button);
         falseButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -132,8 +108,8 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        // ссылаюсь на кнопку нэкст, при нажатии на которую происходит последовательность действий
-        //аналогичная нажатию на текст с вопросом.
+        // ссылаюсь на кнопку next_button, при нажатии увеличиваю индекс вопроса на один и обновляю
+        // вопрос. В случае если вопрос последний возвращаюсь в начало.
         Button nextButton = findViewById(R.id.next_button);
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -142,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
                 updateQuestion();
             }
         });
-        // ссылаюсь на кнопку прев при её нажатии смена вопроса и индекса происходит в обратной
+        // ссылаюсь на кнопку prev_button при её нажатии смена вопроса и индекса происходит в обратной
         //последовательности.
         Button prevButton = findViewById(R.id.prev_button);
         prevButton.setOnClickListener(new View.OnClickListener() {
@@ -168,10 +144,47 @@ public class MainActivity extends AppCompatActivity {
         updateQuestion();
     }
 
-    //Проверяю вернувшийся интент из приложения чит активити, Загружаю данные о том, был ли подсмотрен
-    //ответ в переменную типа булин.
+    // переопределяю метод добавив в него логи.
+    @Override
+    public void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart() called");
+    }
+
+    // переопределяю метод добавив в него логи.
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume() called");
+    }
+
+    // переопределяю метод добавив в него логи.
+    @Override
+    public void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause() called");
+    }
+    // переопределяю метод добавив в него логи.
+    @Override
+    public void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop() called");
+    }
+
+    // переопределяю метод добавив в него логи.
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy() called");
+    }
+
+
+
+    //Проверяю вернувшийся интент из CheatActivity, Загружаю данные о том, был ли подсмотрен
+    //ответ в переменную типа boolean.
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (resultCode != Activity.RESULT_OK) {
             return;
         }
@@ -183,39 +196,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // метод отключает кнопки, если элемент массива с индексом, равным индексу вопроса, равен единице.
-    private void setEnableButton(int numberOfQuestion) {
-        if (numberOfQuestion != 1) {
-            trueButton.setEnabled(true);
-            falseButton.setEnabled(true);
-        } else {
-            trueButton.setEnabled(false);
-            falseButton.setEnabled(false);
-        }
-    }
 
-    // переопределяю метод добавив в него логи.*
-    @Override
-    public void onStart() {
-        super.onStart();
-        Log.d(TAG, "onStart() called");
-    }
-
-    //аналогично*
-    @Override
-    public void onResume() {
-        super.onResume();
-        Log.d(TAG, "onResume() called");
-    }
-
-    //аналогично*
-    @Override
-    public void onPause() {
-        super.onPause();
-        Log.d(TAG, "onPause() called");
-    }
-
-    //Сохраняю значения переменных в объект класса Бандл, передающийся в метод криейт при запуске приложения
+    //Сохраняю значения переменных в объект класса Bundle, передающийся в метод onCreate при запуске приложения
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
@@ -229,21 +211,40 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    //аналогично*
-    @Override
-    public void onStop() {
-        super.onStop();
-        Log.d(TAG, "onStop() called");
+    //Метод считающий количество оставшихся подсказок, ограничиваю количество подсказок тремя.
+    private static void limitToCheatAction(int[] cheatActions) {
+        int threeCheat = 0;
+        for (int i : cheatActions) threeCheat += i;
+        switch (threeCheat) {
+            case 0:
+                mCheatAction.setText("You have " + 3 + " cheat actions");
+                break;
+            case 1:
+                mCheatAction.setText("You have " + 2 + " cheat actions");
+                break;
+            case 2:
+                mCheatAction.setText("You have " + 1 + " cheat actions");
+                break;
+            default:
+                mCheatAction.setText("You have not cheat actions");
+                mCheatAction.setEnabled(false);
+        }
+
+    }
+    // метод отключает кнопки, если элемент массива с индексом, равным индексу вопроса, равен единице.
+    private void setEnableButton(int numberOfQuestion) {
+        if (numberOfQuestion != 1) {
+            trueButton.setEnabled(true);
+            falseButton.setEnabled(true);
+        } else {
+            trueButton.setEnabled(false);
+            falseButton.setEnabled(false);
+        }
     }
 
-    //аналогично*
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "onDestroy() called");
-    }
 
-    //обновляю вопрос. Вызываю метод сэт энэбл
+
+    //обновляю вопрос. Вызываю setEnableButton
     private void updateQuestion() {
         int question = mQuestionBank[mCurrentIndex].getTextResId();
         mQuestionTextView.setText(question);
@@ -251,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Проверяю конечный результат теста после того, как пользователь дал ответы на все вопросы
-    //и вывожу его на экран через объект класса Тост
+    //и вывожу его на экран через объект класса Toast
     private void checkResult(int questionTrue, int allQuestion) {
         double divider = (double) questionTrue / allQuestion;
         String message = "Correct answer=" + divider * 100 + "%";
@@ -262,8 +263,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    // Проверяю каждый отдельный ответ, вывожу через "Тосты" результат на экран, ссылаясь на файл со
-    //строковыми ресурсами. Выключаю кнопки тру и фолс, после каждого вызова метода.
+    // Проверяю каждый отдельный ответ, вывожу через Toast результат на экран, ссылаясь на файл со
+    //строковыми ресурсами. Выключаю кнопки trueButton и falseButton, после каждого вызова метода.
     private void checkAnswer(boolean userPressedTrue) {
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
         int messageResId = 0;
